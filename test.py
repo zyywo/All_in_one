@@ -1,23 +1,24 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+from RouterShot import SaveScreenShot
 import tkinter as tk
 import json
 import os
 
+config_file = 'test.json'
+
 # TODO:
-# 1.新增/删除功能
-# 2.使程序在没有配置文件时也可以编辑配置文件并保存
 # 3.倒计时自动开始
 
 class Add_router_window(tk.Toplevel):
     def __init__(self,index=None,config=None):
+        super(Add_router_window, self).__init__()
         self.config = config
         self.index = index
         self.router = None
 
         if self.index is not len(self.config['routers']):
             self.router = self.config['routers'][self.index]
-        super().__init__()
         self.createwidget()
         self.title('编辑IP')
 
@@ -52,21 +53,32 @@ class Add_router_window(tk.Toplevel):
         else:
             self.config['routers'][self.index] = temp_router
 
-        with open('test.json','w') as jf:
+        with open(config_file,'w') as jf:
             json.dump(self.config,jf)
 
-        self.destroy()
+
+        try:
+            self.destroy()
+        except Exception as e:
+            print(e)
 
     def cancle_button_clicked(self):
-        self.destroy()
+        try:
+            self.destroy()
+        except Exception as e:
+            print(e)
 
 
 class MainWindow(tk.Frame):
+
     def __init__(self,mast=None):
+        self.child_window = None
         super().__init__(mast)
         self.pack()
+        self._config = self.load_config()
 
-        self._update()
+        # s = SaveScreenShot(self._config)
+        self.creatwidgets()
 
     def creatwidgets(self):
         self.mail_from_label = tk.Label(self,text='发件人邮箱：')
@@ -75,7 +87,7 @@ class MainWindow(tk.Frame):
         self.mail_to_label = tk.Label(self,text='收件人邮箱：')
         self.base_dir_label = tk.Label(self,text='工作目录')
         self.new_button = tk.Button(self,text='添加IP',command=self.new_button_clicked)
-        self.delete_button = tk.Button(self,text='删除IP')
+        self.delete_button = tk.Button(self,text='删除IP',command=self.delete_button_clicked)
         self.save_button= tk.Button(self,text='保存配置',command=self.save_button_clicked)
         self.routers_list_box = tk.Listbox(self)
 
@@ -114,38 +126,56 @@ class MainWindow(tk.Frame):
         # 设置组建的动作
         self.routers_list_box.bind("<Double-Button-1>", lambda e:self.list_box_double_clicked())
 
-    def list_box_double_clicked(self):
-        index = self.routers_list_box.curselection()[0]
-
-        t = Add_router_window(index,self._config)
-        self.update_idletasks()
-
     @staticmethod
     def load_config():
         """读取配置文件，返回值是字典类型"""
 
         _s = None
 
-        if not os.path.exists('test.json'):
+        if not os.path.exists(config_file):
             _s = {'mail_from':'','mail_to':'','mail_password':'','mail_server':'','base_dir':'','routers':[]}
-            print('Class MainWindow:load_config():Not exists file: test.json')
+            print('Class MainWindow:load_config():Not exists file: {}'.format(config_file))
         else:
             try:
-                with open('test.json') as jf:
+                with open(config_file) as jf:
                     _s = json.load(jf)
             except Exception as e:
                 print('class MainWindow:load_config():',e)
         return _s
 
     def _update(self):
-        """读取配置文件，并更新窗口的内容"""
-
+        """读取配置文件，更新窗口内容,并把child_window赋值为None"""
         self._config = self.load_config()
         self.creatwidgets()
+        self.child_window=None
+        print('updated')
+
+    def list_box_double_clicked(self):
+        if not self.child_window:
+            try:
+                index = self.routers_list_box.curselection()[0]
+
+                self.child_window = Add_router_window(index,self._config)
+
+                self.child_window.ip_entry.bind('<Destroy>',lambda anym:self._update())
+                '''如果使用w.bind('<Destroy>',func)的方式，那么窗口中有多少个部件，就会destroy多少次，每个部件destroy时都会触发func，从而导致func调用多次'''
+            except Exception as e:
+                print(e)
 
     def new_button_clicked(self):
-        index = len(self._config['routers'])
-        w = Add_router_window(index,self._config)
+        if not self.child_window:
+            index = len(self._config['routers'])
+            self.child_window = Add_router_window(index,self._config)
+            self.child_window.ip_entry.bind('<Destroy>',lambda anym:self._update())
+
+    def delete_button_clicked(self):
+        index = self.routers_list_box.curselection()[0]
+        print(index)
+        self._config['routers'].pop(index)
+
+        self.save_button_clicked()
+
+        self.creatwidgets()
 
     def save_button_clicked(self):
         self._config['mail_from'] = self.mail_from_entry.get()
@@ -154,7 +184,7 @@ class MainWindow(tk.Frame):
         self._config['mail_to'] = self.mail_to_entry.get()
         self._config['base_dir'] = self.base_dir_entry.get()
 
-        with open('test.json','w') as jf:
+        with open(config_file,'w') as jf:
             json.dump(self._config,jf)
 
         print('Class MainWindow:save_button_clicked(): ',self._config)
@@ -166,37 +196,4 @@ if __name__ == '__main__':
     app = MainWindow(root)
     app.master.title('配置编辑器')
 
-    # app.master.maxsize(200,200)
-
     app.mainloop()
-
-# from tkinter import *
-#
-# class Tl(Toplevel):
-#     def __init__(self):
-#         super().__init__()
-#         self.title('子窗口')
-#         self.button = Button(self,text='关闭',command=self.close).pack()
-#
-#     def close(self):
-#         self.destroy()
-#
-# class MainWindow(Frame):
-#     def __init__(self):
-#         super().__init__()
-#         self.pack()
-#
-#         self.button = Button(self, text='show child window', command=self.show_child_window)
-#         self.entry = Entry(self)
-#
-#         self.entry.pack()
-#         self.button.pack()
-#
-#     def show_child_window(self):
-#         child_window = Tl()
-#
-#     def done(self):
-#         self.entry.insert(0,'子窗口已关闭')
-#
-# a = MainWindow()
-# a.mainloop()

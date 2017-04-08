@@ -14,9 +14,9 @@ logging.basicConfig(format='%(asctime)s %(message)s',filename='RouterShot.log',f
 
 
 class SaveScreenShot():
-    def __init__(self):
+    def __init__(self,_config,_webdriver='Firefox'):
         try:
-            config = readconfig()
+            config = _config
             self.base_dir = config['base_dir']
 
             local_time = time.localtime()
@@ -27,7 +27,14 @@ class SaveScreenShot():
             if os.path.isdir(self.day_dir) is False:
                 os.makedirs(self.day_dir)
 
-            self.driver = webdriver.Firefox(timeout=30)
+            if _webdriver is 'Edge':
+                self.driver = webdriver.Edge()
+            elif _webdriver is 'Chrome':
+                self.driver = webdriver.Chrome()
+            elif _webdriver is 'Safari':
+                self.driver = webdriver.Safari()
+            else:
+                self.driver = webdriver.Firefox( timeout=30 )
             self.driver.maximize_window()
             self.data = []
             self.message = '此警告生成的时间为：'+time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
@@ -125,7 +132,7 @@ def readconfig():
 
 if __name__ == '__main__':
 
-    a = SaveScreenShot()
+    a = SaveScreenShot(readconfig())
     routers = readconfig()['routers']
     for router in routers:
         a.loginrouter(router['ip'],router['username'],router['password'])
