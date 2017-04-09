@@ -12,12 +12,11 @@ import logging
 
 logging.basicConfig(format='%(asctime)s %(message)s',filename='RouterShot.log',filemode='w',level=logging.INFO,datefmt='%Y/%m/%d %H:%M:%S')
 
-
 class SaveScreenShot():
     def __init__(self,_config,_webdriver='Firefox'):
         try:
-            config = _config
-            self.base_dir = config['base_dir']
+            self.config = _config
+            self.base_dir = os.path.abspath(self.config['base_dir'])
 
             local_time = time.localtime()
             year_dir = self.base_dir + '/{}年'.format(local_time.tm_year)
@@ -41,7 +40,7 @@ class SaveScreenShot():
         except Exception as e:
             logging.error(e)
 
-    def loginrouter(self, ip,_username,_password):
+    def __loginrouter(self, ip,_username,_password):
         try:
             url = 'http://' + ip
             self.driver.get(url)
@@ -51,7 +50,9 @@ class SaveScreenShot():
             self.driver.find_element_by_id('password').send_keys(_password)
             self.driver.find_element_by_id('OKBTN').click()
             time.sleep(3)
-            self.driver.save_screenshot(self.day_dir + '/' + ip + '.png')
+
+            self.driver.save_screenshot(self.day_dir+'/'+ip.replace(':', '-')+'.png')
+            print('save_screenshot_done')
 
             time.sleep(1)
 
@@ -72,6 +73,10 @@ class SaveScreenShot():
         except Exception as e:
             logging.error(e)
 
+    def loginrouters(self):
+        for router in self.config['routers']:
+            self.__loginrouter(router['ip'],router['username'],router['password'])
+
     def sendalert(self):
         try:
             for i in range(0,len(self.data),6):
@@ -83,19 +88,21 @@ class SaveScreenShot():
                                '网络连接数：'+self.data[i+3]+'\n'+\
                                'CPU使用率：'+self.data[i+4]+'\n'+\
                                '内存使用率：'+self.data[i+5]
-            mail = Mail()
+            mail = Mail(self.config)
             mail.send(self.message)
+            print('ccc')
             # print(self.message)
         except Exception as e:
-            logging.error(e)
+            print('Class SaveScreenShot:sendalert(): ',e)
+            logging.error('Class SaveScreenShot:sendalert(): '+str(e))
 
     def quit(self):
         self.driver.quit()
 
 
 class Mail():
-    def __init__(self,_port=25):
-        config = readconfig()
+    def __init__(self,_config,_port=25):
+        config = _config
         self.from_addr = str(config['mail_from'])
         self.password = str(config['mail_password'])
         self.to_addr = str(config['mail_to'])
@@ -107,13 +114,13 @@ class Mail():
         try:
             self.mail_server.login(self.from_addr,self.password)
         except Exception as e:
-            print('zzz error in:Class Mail: __init__(): ',e)
+            print('error in:Class Mail: __init__(): ',e)
             logging.error(e)
 
     def send(self,_message):
         msg = MIMEText(str(_message), 'plain', 'utf-8')
         msg['To'] = formataddr((Header('主人', 'utf-8').encode(), self.to_addr))
-        msg['Subject'] = Header('{} 路由器预警通知'.format(time.strftime('%Y年%m月%d日 %H:%M:%S',time.localtime())), 'utf-8')
+        msg['Subject'] = Header('{} 路由器预警通知'.format(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())), 'utf-8')
         try:
             self.mail_server.sendmail(self.from_addr, [self.to_addr], msg.as_string())
             self.mail_server.quit()
@@ -132,10 +139,9 @@ def readconfig():
 
 if __name__ == '__main__':
 
-    a = SaveScreenShot(readconfig())
-    routers = readconfig()['routers']
-    for router in routers:
-        a.loginrouter(router['ip'],router['username'],router['password'])
+    a = SaveScreenShot(readconfig(),'Chrome')
+
+    a.loginrouters()
 
     a.sendalert()
     a.quit()
