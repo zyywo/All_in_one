@@ -5,3 +5,4 @@ geckodriver.log
 RouterShot.log
 *.json
 test2.py
+/downloadV3/file
