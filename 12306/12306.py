@@ -8,20 +8,10 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import Select
 from datetime import datetime
 from SendSMS import send_sms
+from setting import fromstation, tostation, date_of_leave, select_char, select_t
 import time
 
-# 出发站
-fromstation = '驻马店'
-# 到达站
-tostation = '虎门'
-# 乘车日期
-date_of_leave = '02-10'
-# 座位类型
-select_char = '二等座'
-# 车次
-select_t = 'G71'
-
-# CHAR_TYPE = ['商务座', '特等座', '一等座 ', '二等座', '高级软卧', '软卧', '动卧', '硬卧', '软座', '硬座', '无座', '其他']
+#           ['商务座', '特等座', '一等座 ', '二等座', '高级软卧', '软卧', '动卧', '硬卧', '软座', '硬座', '无座', '其他']
 CHAR_TYPE = ['SWZ', 'TZ',  'ZY', 'ZE', 'GR', 'RW', 'SRRB', 'YW', 'RZ', 'YZ', 'WZ', 'QT']
 login_url = 'https://kyfw.12306.cn/otn/resources/login.html'
 tick_url = 'https://kyfw.12306.cn/otn/leftTicket/init'
@@ -78,12 +68,12 @@ def get_trips():
         except exceptions.ElementClickInterceptedException:
             print('查询按钮被其他元素遮挡，重试中...')
             continue
+        time.sleep(1)
 
         try:
             tick_table = wait.until(expected_conditions.visibility_of_element_located((By.ID, 'queryLeftTable')))
-            # tick_table = browser.find_element_by_id('queryLeftTable')
             trains = tick_table.find_elements_by_tag_name('tr')[::2]
-        except exceptions.StaleElementReferenceException:
+        except (exceptions.StaleElementReferenceException, exceptions.TimeoutException):
             print('查询失败， 重试中 ...')
             continue
 
@@ -119,8 +109,9 @@ def get_trips():
 
             # 预定按键可用，说明有票
             if order_btn is not None:
-                has_tickets = True
-                trips_info[trips] = [ft_station, lt_times, duration, ticket_num, order_btn]
+                if trips in select_t:
+                    has_tickets = True
+                    trips_info[trips] = [ft_station, lt_times, duration, ticket_num, order_btn]
 
         # 一个页面处理完后依然没有票的情况
         if has_tickets is False:
@@ -167,8 +158,9 @@ def order_ticket(target_trip):
     btn.click()
     # wait.until(expected_conditions.element_to_be_clickable((By.ID, 'qr_submit_id')))
     sumbit = wait.until(expected_conditions.element_to_be_selected((By.ID, 'qr_submit_id')))
+    wait.until(expected_conditions.element_to_be_clickable((By.ID, 'qr_submit_id')))
     print(sumbit.text)
-    time.sleep(2)
+    time.sleep(1)
     sumbit.click()
 
     if wait.until(expected_conditions.url_changes(order_url)):
