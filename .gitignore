@@ -6,3 +6,4 @@ RouterShot.log
 *.json
 test2.py
 /downloadV3/file
+SendSMS.py
