@@ -1,24 +1,20 @@
 import paramiko
-from Module.MyData import MyData
-#
-# class ssh:
-#     def __init__(self):
-#         self.client = paramiko.SSHClient()
-#         self.client.load_host_keys()
-#         self.client.connect('localhost')
+# from Module.MyData import MyData
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy)
-client.connect('127.0.0.1', key_filename='/home/zyy/.ssh/openSSH_private_key')
+client.connect('pc.lan', username='gns3', password='gns3')
+
 stdin, stdout, stderr = client.exec_command('ls -l')
-
-# print(dir(stdout))
-
 a = stdout.readlines()
-md = MyData(a)
-# print('error: ', stderr.readlines())
-print(md.column(-2, stop=-1).to_str())
+# md = MyData(a)
+# print(md.column(-2, stop=-1).to_str())
 # print([1, 2, 3, 4][-2:-1])
+
+stdin, stdout, stderr = client.exec_command('netstat -npt4')
+for i in stdout.readlines():
+    print(i[:-2])
+
 client.close()
 
 # md[-1]

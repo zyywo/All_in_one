@@ -7,3 +7,4 @@ RouterShot.log
 test2.py
 /downloadV3/file
 SendSMS.py
+__pycache__/
