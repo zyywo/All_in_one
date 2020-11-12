@@ -1,18 +1,18 @@
 import logging
 
 
-def mylogger(_logname: str = 'mylog',   _screen=True, _file=None,
-             _screen_fmt: str = None,   _file_fmt: str = None,
+def mylogger(_logname: str = 'mylog', _screen=True, _file=None,
+             _screen_fmt: str = None, _file_fmt: str = None,
              _screen_level: str = None, _file_level: str = None):
     _logger = logging.getLogger(_logname)
     _logger.setLevel(logging.DEBUG)
 
     _level = {'debug': logging.DEBUG, 'DEBUG': logging.DEBUG,
-              'info':  logging.INFO,  'INFO':  logging.INFO,
-              'warn':  logging.WARN,  'WARN':  logging.WARN,
+              'info': logging.INFO, 'INFO': logging.INFO,
+              'warn': logging.WARN, 'WARN': logging.WARN,
               'warning': logging.WARNING, 'WARNING': logging.WARNING,
               'error': logging.ERROR, 'ERROR': logging.ERROR,
-              'critical': logging.CRITICAL, 'CRITICAL':logging.CRITICAL}
+              'critical': logging.CRITICAL, 'CRITICAL': logging.CRITICAL}
 
     if _screen:
         screen_handler = logging.StreamHandler()
@@ -29,7 +29,7 @@ def mylogger(_logname: str = 'mylog',   _screen=True, _file=None,
 
         _logger.addHandler(screen_handler)
     if _file:
-        file_hander = logging.FileHandler(_file,encoding='utf8')
+        file_hander = logging.FileHandler(_file, encoding='utf8')
 
         if _file_fmt is None:
             _file_fmt = '%(asctime)s line:%(lineno)d %(levelname)s %(message)s'
@@ -47,7 +47,7 @@ def mylogger(_logname: str = 'mylog',   _screen=True, _file=None,
 
 
 if __name__ == '__main__':
-    logger = mylogger(_file='log.txt',_file_level='INFO')
+    logger = mylogger(_file='log.txt', _file_level='INFO')
     logger.debug('就是这样')
     logger.info('这是info')
     logger.error('这是error')
